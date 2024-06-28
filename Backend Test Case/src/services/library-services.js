@@ -40,7 +40,6 @@ class LibraryService {
         borrowedDate: todayDate,
         status: 'borrowed',
       }).save();
-
       // update stock of book
       await bookModel.findByIdAndUpdate(book._id,
         { $inc: { stock: -1 } }

@@ -1,11 +1,20 @@
 const libraryService = require('../services/library-services');
 
 class LibraryController {
-
   async borrowBooks(req, res) {
     try {
       const { memberCode, bookCodes } = req.body;
       const borrow = await libraryService.borrowBooks(memberCode, bookCodes);
+      res.status(200).json(borrow);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  async returnBooks(req, res) {
+    try {
+      const { memberCode, bookCodes } = req.body;
+      const borrow = await libraryService.returnBooks(memberCode, bookCodes);
       res.status(200).json(borrow);
     } catch (error) {
       res.status(400).json({ error: error.message });
@@ -29,7 +38,6 @@ class LibraryController {
       res.status(400).json({ error: error.message });
     }
   }
-
 };
 
 module.exports = new LibraryController();

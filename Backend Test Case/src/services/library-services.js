@@ -4,7 +4,6 @@ const borrowModel = require('../models/borrow');
 const moment = require('moment');
 
 class LibraryService {
-
   async borrowBooks(memberCode, bookCodes) {
     // set today date
     const todayDate = moment();
@@ -16,7 +15,8 @@ class LibraryService {
     // check member is penalized or not
     const memberPenalized = await borrowModel.find({
       member: member._id,
-      penaltyEndDate: { $lte: todayDate }
+      status: 'penalized',
+      penaltyEndDate: { $gte: todayDate }
     }).lean();
     if (memberPenalized?.length) throw new Error('Member is penalized');
     // check max borrow of books from member
@@ -45,15 +45,80 @@ class LibraryService {
         { $inc: { stock: -1 } }
       );
     })
-
+    // return with desription status
     return `${member.code} successfuly borrow ${books.length} ${books.length > 1 ? 'books' : 'book'}`;
+  }
+
+  async returnBooks(memberCode, bookCodes) {
+    // find available borrow based on member and book
+    const borrows = await borrowModel.aggregate([
+      {
+        $lookup:
+        {
+          from: 'books',
+          localField: 'book',
+          foreignField: '_id',
+          as: 'bookDetail'
+        }
+      },
+      {
+        $lookup:
+        {
+          from: 'members',
+          localField: 'member',
+          foreignField: '_id',
+          as: 'memberDetail'
+        }
+      },
+      {
+        $unwind: '$bookDetail'
+      },
+      {
+        $unwind: '$memberDetail'
+      },
+      {
+        $project: {
+          book: 0,
+          member: 0
+        }
+      },
+      {
+        $match: {
+          'memberDetail.code': memberCode,
+          'bookDetail.code': { $in: bookCodes },
+          'status': 'borrowed'
+        }
+      }
+    ]);
+    if (!borrows?.length) throw new Error('Data not found');
+    // Process to judge the borrow status by date
+    borrows.forEach(async (borrow) => {
+      // initiate to update
+      const updateObj = { ...borrow };
+      const borrowDate = moment(borrow.borrowedDate);
+      const rangeDate = moment().diff(borrowDate, 'days');
+      // condition to penalty
+      if (rangeDate > 7) {
+        updateObj.status = 'penalized';
+        updateObj.penaltyEndDate = moment().add(3, 'days');
+      } else {
+        // change the status to returned 
+        updateObj.status = 'returned';
+      };
+      //set returned date to now
+      updateObj.returnedDate = moment();
+      // update borrow and book data
+      await borrowModel.findByIdAndUpdate(borrow._id, updateObj); 
+      await bookModel.findByIdAndUpdate(borrow.bookDetail._id, { $inc: { stock: 1 } });
+    })
+    // return with description status
+    return `${memberCode} successfully returned ${borrows.length} ${borrows.length > 1 ? ' books' : ' book'}` + `${borrows.some(borrow => moment().diff(moment(borrow.borrowedDate), 'days') > 7) ? 'with penalty' : ''}`;
   }
 
   async checkBooks() {
     //  Shows all existing books and quantities & Books that are being borrowed are not counted
     return await bookModel.find({ stock: { $gt: 0 } }).lean();
   }
-
 
   async checkMembers() {
     // Shows all existing members & The number of books being borrowed by each member

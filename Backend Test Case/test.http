@@ -1,1 +1,15 @@
-GET https://localhost:3000/api/books
+# GET http://localhost:3000/api/books
+# Content-Type: application/json
+
+# {
+#     "bookCodes": ["JK-45", "SHR-1"],
+#     "memberCode": "M001"
+# }
+
+POST http://localhost:3000/api/return
+Content-Type: application/json
+
+{
+    "bookCodes": ["JK-45"],
+    "memberCode": "M001"
+}

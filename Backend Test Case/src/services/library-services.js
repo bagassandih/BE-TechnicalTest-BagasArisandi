@@ -46,7 +46,7 @@ class LibraryService {
       );
     })
     // return with desription status
-    return `${member.code} successfuly borrow ${books.length} ${books.length > 1 ? 'books' : 'book'}`;
+    return `${member.code} successfully borrow ${books.length} ${books.length > 1 ? 'books' : 'book'}`;
   }
 
   async returnBooks(memberCode, bookCodes) {

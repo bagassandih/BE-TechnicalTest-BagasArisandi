@@ -1,11 +1,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const routes = require('./src/routes/library-routes');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
 
 const app = express();
 
 app.use(express.json());
 app.use('/api', routes);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 mongoose.connect('mongodb://127.0.0.1:27017/library')
   .then(() => {

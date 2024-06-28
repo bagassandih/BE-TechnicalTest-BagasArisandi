@@ -1,0 +1,259 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Library System API",
+    "description": "API Documentation for Library System - Technical Test PT. Eigen Tri Mathema"
+  },
+  "host": "localhost:3000",
+  "basePath": "/api/",
+  "tags": [
+    {
+      "name": "Library",
+      "description": "Library API"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/books": {
+      "get": {
+        "tags": [
+          "Library"
+        ],
+        "description": "Check the book, shows all existing books and quantities & Books that are being borrowed are not counted.",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Book"
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/members": {
+      "get": {
+        "tags": [
+          "Library"
+        ],
+        "description": "Member check, shows all existing members & The number of books being borrowed by each member.",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Member"
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/borrow": {
+      "post": {
+        "tags": [
+          "Library"
+        ],
+        "description": "Library members have the privilege of borrowing books, but there are a few conditions. Members are limited to borrowing a maximum of 2 books at a time. Additionally, books that are currently borrowed cannot be borrowed by other members. Finally, the member must be not under any penalties.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BorrowRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful borrow",
+            "schema": {
+              "$ref": "#/definitions/Borrow"
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/BorrowError"
+            }
+          }
+        }
+      }
+    },
+    "/return": {
+      "post": {
+        "tags": [
+          "Library"
+        ],
+        "description": "Members can return borrowed books. If a returned book was borrowed more than 7 days ago, a penalty will be applied. Members with outstanding penalties will be unable to borrow books for an additional 3 days.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ReturnRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful return",
+            "schema": {
+              "$ref": "#/definitions/Member"
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/ReturnError"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "BorrowRequest": {
+      "type": "object",
+      "properties": {
+        "memberCode": {
+          "type": "string",
+          "example": "M001"
+        },
+        "bookCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": [
+            "JK-45",
+            "SHR-1"
+          ]
+        }
+      }
+    },
+    "ReturnRequest": {
+      "type": "object",
+      "properties": {
+        "memberCode": {
+          "type": "string",
+          "example": "M001"
+        },
+        "bookCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": [
+            "JK-45",
+            "SHR-1"
+          ]
+        }
+      }
+    },
+    "Borrow": {
+      "type": "string",
+      "example": "M001 successfully borrow 2 books"
+    },
+    "Return": {
+      "type": "string",
+      "example": "M001 successfully returned 2 books"
+    },
+    "Member": {
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "booksBorrowed": {
+          "type": "integer"
+        }
+      },
+      "example":  {
+        "_id": "667e4514ef411c751c892724",
+        "code": "M001",
+        "name": "Angga",
+        "booksBorrowed": 2
+      }
+    },
+    "Book": {
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "stock": {
+          "type": "integer"
+        }
+      },
+      "example": {
+        "_id": "667e44b5ef411c751c892721",
+        "code": "TW-11",
+        "title": "Twilight",
+        "author": "Stephenie Meyer",
+        "stock": 1
+      }
+    },
+    "Error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "ReturnError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string",
+          "example": "Data not found"
+        }
+      }
+    },
+    "BorrowError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string",
+          "example": "Member cannot borrow more than 2 books"
+        }
+      }
+    }
+  }
+}

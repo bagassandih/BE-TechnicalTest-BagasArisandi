@@ -1,9 +1,11 @@
 const express = require('express');
-const mongoose = require('mongoose');;
+const mongoose = require('mongoose');
+const routes = require('./src/routes/library-routes');
 
 const app = express();
 
 app.use(express.json());
+app.use('/api', routes);
 
 mongoose.connect('mongodb://127.0.0.1:27017/library')
   .then(() => {

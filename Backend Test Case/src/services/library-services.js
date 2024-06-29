@@ -13,19 +13,19 @@ class LibraryService {
     if (!books?.length) throw new Error('Books not found');
     if (!member) throw new Error('Member not found');
     // check member is penalized or not
-    const memberPenalized = await borrowModel.find({
+    const memberPenalized = await borrowModel.count({
       member: member._id,
       status: 'penalized',
       penaltyEndDate: { $gte: todayDate }
-    }).lean();
-    if (memberPenalized?.length) throw new Error('Member is penalized');
+    });
+    if (memberPenalized) throw new Error('Member is penalized');
     // check max borrow of books from member
-    const memberBorrowCount = await borrowModel.find({
+    const memberBorrowCount = await borrowModel.count({
       member: member._id,
       status: 'borrowed',
       returnDate: null
-    }).lean();
-    if (memberBorrowCount?.length >= 2) throw new Error('Member cannot borrow more than 2 books');
+    });
+    if (memberBorrowCount >= 2 || bookCodes.length > 2 || books.length > 2) throw new Error('Member cannot borrow more than 2 books');
     // check stock of books
     let bookOutofStock = books.filter(book => book.stock < 1).map(book => book.code);
     if (bookOutofStock?.length) {
@@ -34,22 +34,23 @@ class LibraryService {
     }
     // continue to borrow, create data per book
     books.forEach(async (book) => {
-      await new borrowModel({
+      await borrowModel.create({
         member: member._id,
         book: book._id,
         borrowedDate: todayDate,
         status: 'borrowed',
-      }).save();
+      });
       // update stock of book
       await bookModel.findByIdAndUpdate(book._id,
         { $inc: { stock: -1 } }
       );
     })
     // return with desription status
-    return `${member.code} successfully borrow ${books.length} ${books.length > 1 ? 'books' : 'book'}`;
+    return `${member.code} successfully borrowed ${books.length} ${books.length > 1 ? 'books' : 'book'}`;
   }
 
   async returnBooks(memberCode, bookCodes) {
+    if (bookCodes.length > 2) throw new Error('Member cannot return more than 2 books')
     // find available borrow based on member and book
     const borrows = await borrowModel.aggregate([
       {
@@ -112,7 +113,7 @@ class LibraryService {
       await bookModel.findByIdAndUpdate(borrow.bookDetail._id, { $inc: { stock: 1 } });
     })
     // return with description status
-    return `${memberCode} successfully returned ${borrows.length} ${borrows.length > 1 ? ' books' : ' book'}` + `${borrows.some(borrow => moment().diff(moment(borrow.borrowedDate), 'days') > 7) ? 'with penalty' : ''}`;
+    return `${memberCode} successfully returned ${borrows.length} ${borrows.length > 1 ? 'books' : 'book'}` + `${borrows.some(borrow => moment().diff(moment(borrow.borrowedDate), 'days') > 7) ? ' with penalty' : ''}`;
   }
 
   async checkBooks() {
@@ -121,15 +122,35 @@ class LibraryService {
   }
 
   async checkMembers() {
-    // Shows all existing members & The number of books being borrowed by each member
-    const members = await memberModel.find().lean();
-    return Promise.all(members.map(async (member) => {
-      const getBorrowData = await borrowModel.find({ member: member._id, status: 'borrowed' }).lean();
-      return {
-        ...member,
-        booksBorrowed: getBorrowData.length
+    // Aggregate to show all existing members and the number of books being borrowed by each member
+    return await memberModel.aggregate([
+      {
+        $lookup: {
+          from: 'borrows',
+          localField: '_id',
+          foreignField: 'member',
+          as: 'borrowedBooks'
+        }
+      },
+      {
+        $addFields: {
+          booksBorrowed: {
+            $size: {
+              $filter: {
+                input: '$borrowedBooks',
+                as: 'borrow',
+                cond: { $eq: ['$$borrow.status', 'borrowed'] }
+              }
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          borrowedBooks: 0 
+        }
       }
-    }));
+    ]);
   }
 }
 

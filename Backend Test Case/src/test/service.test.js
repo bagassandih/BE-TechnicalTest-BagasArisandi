@@ -78,8 +78,8 @@ describe('Library Service - borrowBooks()', () => {
         lean: jest.fn().mockResolvedValue(mockData.mockedMembers[2])
       }
     });
-    borrowModel.count = jest.fn().mockResolvedValue(0);
-    borrowModel.count = jest.fn().mockResolvedValue(0);
+    borrowModel.countDocuments = jest.fn().mockResolvedValue(0);
+    borrowModel.countDocuments = jest.fn().mockResolvedValue(0);
     borrowModel.create = jest.fn().mockResolvedValue({});
     bookModel.findByIdAndUpdate = jest.fn().mockResolvedValue({});
     // initiate sections
@@ -89,7 +89,7 @@ describe('Library Service - borrowBooks()', () => {
     // expect sections
     expect(bookModel.find).toHaveBeenCalledWith({ code: { $in: bookCodes } });
     expect(memberModel.findOne).toHaveBeenCalledWith({ code: memberCode });
-    expect(borrowModel.count).toHaveBeenCalledTimes(2);
+    expect(borrowModel.countDocuments).toHaveBeenCalledTimes(2);
     expect(borrowModel.create).toHaveBeenCalled();
     expect(bookModel.findByIdAndUpdate).toHaveBeenCalled();
     expect(borrowBooks).toBe('M001 successfully borrowed 2 books');
@@ -152,7 +152,7 @@ describe('Library Service - borrowBooks()', () => {
         lean: jest.fn().mockResolvedValue(mockData.mockedMembers[2])
       }
     });
-    borrowModel.count = jest.fn().mockImplementation(async (query) => {
+    borrowModel.countDocuments = jest.fn().mockImplementation(async (query) => {
       return query.status === 'penalized' ? 1 : 0;
     });
     const bookCodes = ['TW-11'];
@@ -178,7 +178,7 @@ describe('Library Service - borrowBooks()', () => {
         lean: jest.fn().mockResolvedValue(mockData.mockedMembers[2])
       }
     });
-    borrowModel.count = jest.fn().mockImplementation(async (query) => {
+    borrowModel.countDocuments = jest.fn().mockImplementation(async (query) => {
       return query.status === 'borrowed' ? 2 : 0;
     });
     const bookCodes = ['TW-11'];
@@ -204,7 +204,7 @@ describe('Library Service - borrowBooks()', () => {
         lean: jest.fn().mockResolvedValue(mockData.mockedMembers[2])
       }
     });
-    borrowModel.count = jest.fn().mockResolvedValue(0);
+    borrowModel.countDocuments = jest.fn().mockResolvedValue(0);
     const bookCodes = ['SHR-1', 'JK-45'];
     const memberCode = 'M001';
     let error;

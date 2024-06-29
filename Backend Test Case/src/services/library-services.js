@@ -13,14 +13,14 @@ class LibraryService {
     if (!books?.length) throw new Error('Books not found');
     if (!member) throw new Error('Member not found');
     // check member is penalized or not
-    const memberPenalized = await borrowModel.count({
+    const memberPenalized = await borrowModel.countDocuments({
       member: member._id,
       status: 'penalized',
       penaltyEndDate: { $gte: todayDate }
     });
     if (memberPenalized) throw new Error('Member is penalized');
     // check max borrow of books from member
-    const memberBorrowCount = await borrowModel.count({
+    const memberBorrowCount = await borrowModel.countDocuments({
       member: member._id,
       status: 'borrowed',
       returnDate: null
